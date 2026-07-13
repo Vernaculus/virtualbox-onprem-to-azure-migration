@@ -42,13 +42,13 @@ After (Azure):
 | 5     | Cutover and decommission              | In Progress     |
 
 ## Repository Structure
-`
+```
 /terraform    - IaC for target Azure landing zone
 /ansible      - On-prem VM baseline configuration
 /docs         - Architecture diagrams, assessment reports, lessons learned
 /screenshots  - Migration process evidence
 README.md
-`
+```
 ## Key Decisions and Trade-offs
 
 - Why agent-based migration was used instead of appliance-based (VirtualBox limitation)
