@@ -42,7 +42,7 @@ After (Azure):
 | 5     | Cutover and decommission              | In Progress     |
 
 ## Repository Structure
-.
+    .
     ├── terraform/     # IaC for target Azure landing zone
     ├── ansible/       # On-prem VM baseline configuration
     ├── docs/          # Architecture diagrams, assessment reports, lessons learned
