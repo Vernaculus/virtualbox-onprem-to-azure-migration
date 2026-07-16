@@ -98,6 +98,12 @@ Vagrant.configure("2") do |config|
       vb.gui    = true                           # Enables a GUI for the host rather then running headless
       vb.customize ["modifyvm", :id, "--groups", "/onprem-to-azure-lab"] # Groups VM under one folder in VirtualBox GUI
     end
+
+    # --- Baseline provisioning (minimal - full config lives in Ansible) ---
+  app.vm.provision "shell", inline: <<-SHELL
+    timedatectl set-ntp true   # Ensures time sync is enabled on first boot, prevents Kerberos clock-skew issues later
+  SHELL
+
   end
 
-end
+ end
