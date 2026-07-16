@@ -100,9 +100,9 @@ Vagrant.configure("2") do |config|
     end
 
     # --- Baseline provisioning (minimal - full config lives in Ansible) ---
-  app.vm.provision "shell", inline: <<-SHELL
-    timedatectl set-ntp true   # Ensures time sync is enabled on first boot, prevents Kerberos clock-skew issues later
-  SHELL
+    app.vm.provision "shell", inline: <<-SHELL
+      timedatectl set-ntp true   # Ensures time sync is enabled on first boot, prevents Kerberos clock-skew issues later
+    SHELL
 
   end
 
