@@ -1,0 +1,52 @@
+# =============================================================================
+# config.example.yml
+# =============================================================================
+# Purpose: Placeholder configuration for the on-prem lab VMs.
+#
+# HOW TO USE:
+#   1. Copy this file to config.yml in the same directory:
+#        cp config.example.yml config.yml
+#   2. Edit config.yml with your own values (IPs, box versions, etc.)
+#   3. config.yml is gitignored - your real values never get committed.
+#   4. The Vagrantfile automatically falls back to THIS file if config.yml
+#      doesn't exist, so a fresh clone still runs out of the box.
+#
+# WHY THIS SPLIT EXISTS:
+#   Separating "structure" (Vagrantfile) from "values" (this file) means
+#   nobody has to touch Ruby code just to change an IP or memory amount.
+#   This mirrors the same variables.tf / terraform.tfvars pattern used
+#   later in this repo's Terraform modules.
+# =============================================================================
+
+# ---------------------------------------------------------------------------
+# Active Directory Domain Controller + DNS (Windows Server)
+# ---------------------------------------------------------------------------
+ad_vm:
+  box: "gusztavvargadr/windows-server-2022-standard"   # Vagrant Cloud box name (Server Core variant)
+  box_version: "2022.0.2411"                            # Pinned so `vagrant up` stays reproducible over time
+  hostname: "dc01"                                      # Guest OS hostname, also used as the VirtualBox VM name
+  private_ip: "192.168.56.10"                           # Static IP on the VirtualBox host-only network (see network block below)
+  memory: 4096                                          # MB of RAM - sized for AD DS + DNS roles plus Server Manager overhead
+  cpus: 2                                               # vCPU count - 2 balances responsiveness against host resource use
+
+# ---------------------------------------------------------------------------
+# RHEL Application Server
+# ---------------------------------------------------------------------------
+rhel_vm:
+  box: "generic/rhel9"          # Vagrant Cloud box name, maintained multi-provider RHEL 9 image
+  box_version: "4.3.12"         # Pinned for reproducibility - same rationale as ad_vm above
+  hostname: "app01"             # Guest OS hostname / VirtualBox VM name
+  private_ip: "192.168.56.11"   # Static IP on the same host-only subnet as dc01, so they can reach each other
+  memory: 2048                  # MB of RAM - minimal install + Ansible/Python runtime headroom, avoids swap thrashing
+  cpus: 2                       # vCPU count
+
+# ---------------------------------------------------------------------------
+# Shared Networking
+# ---------------------------------------------------------------------------
+network:
+  # Name of the VirtualBox host-only network both VMs attach to.
+  # This network is LOCAL ONLY (host + VMs) - it does not provide internet
+  # access. Internet access instead comes from each VM's separate NAT
+  # adapter, which Vagrant attaches automatically and does not need
+  # configuring here.
+  private_network_name: "vboxnet_lab"

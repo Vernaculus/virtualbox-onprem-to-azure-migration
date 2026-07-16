@@ -48,6 +48,9 @@ terraform.rc
 # Retry files from failed Ansible provisioning triggered via Vagrant - local debug artifact only
 *.retry
 
+# config.yml with specific values in it
+vagrant/config.yml
+
 # =========================
 # Ansible
 # =========================
