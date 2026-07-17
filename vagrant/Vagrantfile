@@ -61,6 +61,28 @@ Vagrant.configure("2") do |config|
       vb.gui    = true                         # GUI console needed to validate DC promotion (see provisioner note below)
       vb.customize ["modifyvm", :id, "--groups", "/onprem-to-azure-lab"]
     end
+
+    # DSRM (Directory Services Restore Mode) password is intentionally never
+    # stored in config.yml or any tracked file. If AD_SAFEMODE_PWD is unset,
+    # a random one-time password is generated here and used only in-memory
+    # for this provisioning run.
+    safemode_pwd = ENV['AD_SAFEMODE_PWD'] || (0...20).map { (33 + rand(94)).chr }.join
+
+    # install-adds.ps1 installs AD DS + DNS roles and promotes this VM to a
+    # domain controller. NOTE: promotion requires a reboot to fully take
+    # effect (-NoRebootOnCompletion is set in the script). Vagrant's WinRM
+    # channel can fail to reconnect immediately after that reboot; if
+    # `vagrant up` errors out here, reboot manually via the VirtualBox GUI
+    # console and re-run Get-ADDomain/dcdiag to confirm promotion completed.
+    ad.vm.provision "shell", path: "provision/install-adds.ps1",
+      args: [settings['ad_vm']['ad_domain_name'], settings['ad_vm']['ad_netbios_name'], safemode_pwd]
+
+    # Persists the ICMP allow rule that was applied manually via `vagrant
+    # winrm` during KAN-3. Scoped to rhel-app's IP specifically, sourced from
+    # config rather than hardcoded, so cross-VM ping validation survives a
+    # `vagrant destroy` / `vagrant up` cycle without manual intervention.
+    ad.vm.provision "shell", path: "provision/allow-icmp.ps1",
+      args: [settings['rhel_vm']['private_ip']]
   end
 
   # ===========================================================================
