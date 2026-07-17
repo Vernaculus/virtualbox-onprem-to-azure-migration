@@ -28,6 +28,8 @@ ad_vm:
   private_ip: "192.168.56.10"                           # Static IP on the VirtualBox host-only network (see network block below)
   memory: 4096                                          # MB of RAM - sized for AD DS + DNS roles plus Server Manager overhead
   cpus: 2                                               # vCPU count - 2 balances responsiveness against host resource use
+  ad_domain_name: "lab.local"                           # Active Directory domain name
+  ad_netbios_name: "LAB"                                 # Active Directory NetBIOS name
 
 # ---------------------------------------------------------------------------
 # RHEL Application Server
