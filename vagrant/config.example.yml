@@ -23,7 +23,7 @@
 # ---------------------------------------------------------------------------
 ad_vm:
   box: "gusztavvargadr/windows-server-2022-standard"   # Vagrant Cloud box name (Server Core variant)
-  box_version: "2022.0.2411"                            # Pinned so `vagrant up` stays reproducible over time
+  box_version: "2601.0.0"                            # Pinned so `vagrant up` stays reproducible over time
   hostname: "dc01"                                      # Guest OS hostname, also used as the VirtualBox VM name
   private_ip: "192.168.56.10"                           # Static IP on the VirtualBox host-only network (see network block below)
   memory: 4096                                          # MB of RAM - sized for AD DS + DNS roles plus Server Manager overhead
