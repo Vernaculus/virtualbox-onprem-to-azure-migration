@@ -51,6 +51,10 @@ terraform.rc
 # config.yml with specific values in it
 vagrant/config.yml
 
+# DSRM/recovery secrets - never commit
+.secrets/
+*.pwd
+
 # =========================
 # Ansible
 # =========================
@@ -94,3 +98,9 @@ hosts.local
 .DS_Store
 .vscode/
 .idea/
+
+# Local helper scripts - personal workflow tooling, not part of the project build
+scripts/
+
+# Generated snapshot files - local context dumps, never part of the tracked repo
+project-snapshots/
