@@ -4,13 +4,13 @@
 # =============================================================================
 # Vagrantfile - onprem-to-azure-migration lab
 # =============================================================================
-# Defines two VMs that model a small on-prem environment prior to migration:
+# Defines two VMs modeling a small on-prem environment prior to migration:
 #   1. ad-dc     - Windows Server domain controller + DNS
 #   2. rhel-app  - RHEL application server
 #
-# All host-specific values (IPs, memory, CPU, box versions) live in
-# config.yml / config.example.yml, NOT in this file. This file should not
-# need to be edited by someone cloning the repo - only the config file.
+# All host-specific values (IPs, memory, CPU, box versions, AD names) live in
+# config.yml / config.example.yml, NOT in this file. Cloning this repo should
+# only ever require editing the config file, never this Vagrantfile.
 #
 # PREREQUISITES:
 #   - Vagrant installed
@@ -27,11 +27,8 @@
 
 require 'yaml'
 
-# -----------------------------------------------------------------------------
-# Load configuration
-# -----------------------------------------------------------------------------
-# Prefer the real config.yml (gitignored, contains your actual values).
-# Fall back to the example file so a fresh clone works with zero setup.
+# Prefer real config.yml (gitignored, real values). Fall back to the example
+# file so a fresh clone still runs with zero setup.
 CONFIG_FILE = File.exist?('config.yml') ? 'config.yml' : 'config.example.yml'
 settings = YAML.load_file(CONFIG_FILE)
 
@@ -42,35 +39,27 @@ Vagrant.configure("2") do |config|
   # ===========================================================================
   config.vm.define "ad-dc" do |ad|
 
-    # --- Box selection ---
-    # Box name/version come from config so this can be swapped without
-    # touching this file (e.g. to a Desktop Experience variant later).
     ad.vm.box         = settings['ad_vm']['box']
     ad.vm.box_version = settings['ad_vm']['box_version']
     ad.vm.hostname    = settings['ad_vm']['hostname']
 
-    # --- Communicator ---
-    # Windows guests use WinRM instead of SSH for Vagrant's control channel.
-    # Without this, Vagrant defaults to SSH and provisioning will fail.
+    # Windows guests use WinRM instead of SSH for Vagrant's control channel;
+    # without this, Vagrant defaults to SSH and provisioning fails.
     ad.vm.communicator = "winrm"
 
-    # --- Networking ---
-    # Adapter 1 (NAT): attached automatically by Vagrant, not defined here.
-    #   -> Gives this VM outbound internet access (Windows Update, etc.)
-    #      without exposing it to the physical LAN.
-    # Adapter 2 (private_network, defined below): host-only network shared
-    #   with rhel-app, using a STATIC IP so DNS/AD traffic between VMs is
-    #   predictable and doesn't depend on DHCP lease timing.
+    # Adapter 1 (NAT, auto-attached by Vagrant): outbound internet access
+    # without exposing the VM to the physical LAN.
+    # Adapter 2 (below): host-only network shared with rhel-app, static IP
+    # so AD/DNS traffic between VMs doesn't depend on DHCP lease timing.
     ad.vm.network "private_network",
       ip: settings['ad_vm']['private_ip']
 
-    # --- Provider-specific resource limits ---
     ad.vm.provider "virtualbox" do |vb|
-      vb.name   = settings['ad_vm']['hostname']  # Friendly name in the VirtualBox GUI
-      vb.memory = settings['ad_vm']['memory']    # RAM in MB, sized for AD DS + DNS + GUI console overhead
-      vb.cpus   = settings['ad_vm']['cpus']      # vCPU count
-      vb.gui    = true                           # Enables a GUI for the host rather then running headless
-      vb.customize ["modifyvm", :id, "--groups", "/onprem-to-azure-lab"] # Groups VM under one folder in VirtualBox GUI
+      vb.name   = settings['ad_vm']['hostname']
+      vb.memory = settings['ad_vm']['memory']  # Sized for AD DS + DNS + console overhead
+      vb.cpus   = settings['ad_vm']['cpus']
+      vb.gui    = true                         # GUI console needed to validate DC promotion (see provisioner note below)
+      vb.customize ["modifyvm", :id, "--groups", "/onprem-to-azure-lab"]
     end
   end
 
@@ -79,31 +68,26 @@ Vagrant.configure("2") do |config|
   # ===========================================================================
   config.vm.define "rhel-app" do |app|
 
-    # --- Box selection ---
     app.vm.box         = settings['rhel_vm']['box']
     app.vm.box_version = settings['rhel_vm']['box_version']
     app.vm.hostname    = settings['rhel_vm']['hostname']
 
-    # --- Networking ---
-    # Same pattern as ad-dc: NAT adapter (auto) for internet, private_network
-    # (below) with a static IP for lab-internal traffic and Ansible control.
+    # Same pattern as ad-dc: NAT (auto) for internet, private_network below
+    # with a static IP for lab-internal traffic and future Ansible control.
     app.vm.network "private_network",
       ip: settings['rhel_vm']['private_ip']
 
-    # --- Provider-specific resource limits ---
     app.vm.provider "virtualbox" do |vb|
       vb.name   = settings['rhel_vm']['hostname']
-      vb.memory = settings['rhel_vm']['memory']  # RAM in MB, sized for minimal RHEL install + Ansible/Python runtime
+      vb.memory = settings['rhel_vm']['memory']  # Minimal RHEL install + Ansible/Python runtime headroom
       vb.cpus   = settings['rhel_vm']['cpus']
-      vb.gui    = true                           # Enables a GUI for the host rather then running headless
-      vb.customize ["modifyvm", :id, "--groups", "/onprem-to-azure-lab"] # Groups VM under one folder in VirtualBox GUI
+      vb.customize ["modifyvm", :id, "--groups", "/onprem-to-azure-lab"]
     end
 
-    # --- Baseline provisioning (minimal - full config lives in Ansible) ---
+    # Minimal baseline only - full config lives in Ansible (KAN-6+).
     app.vm.provision "shell", inline: <<-SHELL
-      timedatectl set-ntp true   # Ensures time sync is enabled on first boot, prevents Kerberos clock-skew issues later
+      timedatectl set-ntp true   # Prevents Kerberos clock-skew issues once domain-joined
     SHELL
-
   end
 
- end
+end
