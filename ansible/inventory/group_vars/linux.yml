@@ -1,0 +1,36 @@
+---
+ansible_python_interpreter: /usr/bin/python3
+
+baseline_linux_repos:
+  - name: centos-stream-baseos
+    description: "CentOS Stream 9 BaseOS (RHEL-compatible substitute for unregistered lab VM)"
+    baseurl: "https://mirror.stream.centos.org/9-stream/BaseOS/x86_64/os/"
+    gpgcheck: false
+    enabled: true
+
+  - name: centos-stream-appstream
+    description: "CentOS Stream 9 AppStream (provides httpd)"
+    baseurl: "https://mirror.stream.centos.org/9-stream/AppStream/x86_64/os/"
+    gpgcheck: false
+    enabled: true
+
+baseline_linux_packages:
+  - firewalld
+  - httpd
+
+baseline_linux_package_state: present
+
+baseline_linux_services:
+  - firewalld
+  - httpd
+
+baseline_linux_service_state: started
+baseline_linux_service_enabled: true
+
+baseline_linux_firewalld_services:
+  - http
+
+baseline_linux_web_root: /var/www/html
+baseline_linux_index_file: /var/www/html/index.html
+baseline_linux_index_title: "On-Prem App Server"
+baseline_linux_index_message: "Configured by Ansible in the VirtualBox on-prem lab."

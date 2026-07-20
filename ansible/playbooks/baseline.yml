@@ -1,0 +1,44 @@
+---
+- name: Configure Linux baseline for on-prem app server
+  hosts: linux
+  become: true
+  gather_facts: true
+
+  tasks:
+    - name: Configure package repositories for baseline packages
+      ansible.builtin.yum_repository:
+        name: "{{ item.name }}"
+        description: "{{ item.description }}"
+        baseurl: "{{ item.baseurl }}"
+        gpgcheck: "{{ item.gpgcheck }}"
+        enabled: "{{ item.enabled }}"
+      loop: "{{ baseline_linux_repos }}"
+      when: baseline_linux_repos is defined
+    
+    - name: Ensure baseline Linux packages are installed
+      ansible.builtin.package:
+        name: "{{ baseline_linux_packages }}"
+        state: "{{ baseline_linux_package_state }}"
+
+    - name: Ensure baseline Linux services are enabled and running
+      ansible.builtin.service:
+        name: "{{ item }}"
+        state: "{{ baseline_linux_service_state }}"
+        enabled: "{{ baseline_linux_service_enabled }}"
+      loop: "{{ baseline_linux_services }}"
+
+    - name: Ensure HTTP service is allowed through firewalld
+      ansible.posix.firewalld:
+        service: "{{ item }}"
+        permanent: true
+        state: enabled
+        immediate: true
+      loop: "{{ baseline_linux_firewalld_services }}"
+
+    - name: Deploy default application landing page from template
+      ansible.builtin.template:
+        src: ../templates/index.html.j2
+        dest: "{{ baseline_linux_index_file }}"
+        owner: root
+        group: root
+        mode: "0644"
