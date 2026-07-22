@@ -17,6 +17,7 @@ baseline_linux_repos:
 baseline_linux_packages:
   - firewalld
   - httpd
+  - python3-pexpect
 
 baseline_linux_package_state: present
 
@@ -34,3 +35,6 @@ baseline_linux_web_root: /var/www/html
 baseline_linux_index_file: /var/www/html/index.html
 baseline_linux_index_title: "On-Prem App Server"
 baseline_linux_index_message: "Configured by Ansible in the VirtualBox on-prem lab."
+
+
+ansible_ssh_private_key_file: "{{ playbook_dir }}/../../vagrant/.vagrant/machines/rhel-app/virtualbox/private_key"

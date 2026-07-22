@@ -1,0 +1,7 @@
+---
+# Orchestrates the full on-prem configuration for the lab environment.
+# Run this playbook to apply the Linux baseline and perform domain join
+# in the correct sequence against the VirtualBox VMs.
+
+- import_playbook: baseline.yml
+- import_playbook: domain_join.yml

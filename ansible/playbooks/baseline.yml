@@ -1,4 +1,26 @@
 ---
+- name: Provision least-privilege domain-join service account
+  hosts: windows
+  gather_facts: false
+
+  tasks:
+    - name: Ensure dedicated OU exists for app servers
+      microsoft.ad.ou:
+        name: "{{ app_servers_ou_name }}"
+        path: "{{ ad_base_dn }}"
+        state: present
+
+    - name: Ensure domain-join service account exists
+      microsoft.ad.user:
+        name: "{{ svc_domjoin_user }}"
+        firstname: "Service"
+        surname: "DomainJoin"
+        password: "{{ vault_svc_domjoin_password }}"
+        password_never_expires: true
+        user_cannot_change_password: true
+        state: present
+        path: "{{ ad_base_dn }}"
+
 - name: Configure Linux baseline for on-prem app server
   hosts: linux
   become: true

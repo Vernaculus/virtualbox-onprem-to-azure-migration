@@ -1,7 +1,0 @@
----
-lab_domain_name: "lab.local"
-lab_domain_netbios_name: "LAB"
-
-baseline_manage_time_sync: true
-baseline_ntp_enabled: true
-

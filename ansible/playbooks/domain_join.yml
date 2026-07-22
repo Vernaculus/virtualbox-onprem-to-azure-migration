@@ -1,0 +1,108 @@
+---
+- name: Domain-join RHEL app server to lab.local
+  hosts: linux
+  become: true
+  gather_facts: true
+
+  tasks:
+    - name: Install realmd/sssd/adcli packages for AD join
+      ansible.builtin.package:
+        name:
+          - realmd
+          - sssd
+          - sssd-tools
+          - oddjob
+          - oddjob-mkhomedir
+          - adcli
+          - samba-common-tools
+          - krb5-workstation
+        state: present
+
+    # ansible_facts.interfaces lists device names; each device's own fact
+    # entry (ansible_facts[<device>].ipv4.address) holds its IPv4 address.
+    # Matching against ansible_host (the IP Ansible used to connect) avoids
+    # any reliance on device naming conventions (enp0sX vs ethX vary by
+    # provider/image) or NetworkManager connection-name guessing.
+    - name: Identify network device holding the host-only (management) IP
+      ansible.builtin.set_fact:
+        host_only_device: "{{ item }}"
+      loop: "{{ ansible_facts.interfaces }}"
+      when:
+        - ansible_facts[item].ipv4 is defined
+        - ansible_facts[item].ipv4.address == ansible_host
+
+    - name: Fail fast if no device matches the expected host-only IP
+      ansible.builtin.fail:
+        msg: >-
+          No network device found with IP {{ ansible_host }}.
+          Check vagrant/config.yml and the inventory's ansible_host value.
+      when: host_only_device is not defined
+
+    # Connection *names* are cosmetic and provider-specific; querying by the
+    # device we just confirmed is authoritative regardless of naming scheme.
+    - name: Resolve the NetworkManager connection name bound to that device
+      ansible.builtin.command: "nmcli -g GENERAL.CONNECTION device show {{ host_only_device }}"
+      register: nm_conn_lookup
+      changed_when: false
+
+    - name: Store resolved connection name as a fact
+      ansible.builtin.set_fact:
+        host_only_conn_name: "{{ nm_conn_lookup.stdout | trim }}"
+
+    - name: Fail fast if the device has no active NetworkManager connection
+      ansible.builtin.fail:
+        msg: "Device {{ host_only_device }} has no active NetworkManager connection to modify."
+      when: host_only_conn_name | length == 0
+
+    - name: Set DNS server to AD DC on the resolved host-only connection
+      community.general.nmcli:
+        conn_name: "{{ host_only_conn_name }}"
+        ifname: "{{ host_only_device }}"
+        type: ethernet
+        dns4:
+          - "{{ ad_dc_ip }}"
+        dns4_search:
+          - "{{ lab_domain_name }}"
+        state: present
+      notify: restart NetworkManager
+
+    # Apply the DNS change immediately rather than waiting for end-of-play,
+    # since the very next task depends on the new resolver being active.
+    - name: Flush handlers so the DNS change applies before resolution check
+      ansible.builtin.meta: flush_handlers
+
+    - name: Verify DNS resolution of the AD domain before attempting join
+      ansible.builtin.command: "getent hosts {{ lab_domain_name }}"
+      register: dns_check
+      changed_when: false
+      failed_when: dns_check.rc != 0
+
+    - name: Check current realm membership
+      ansible.builtin.command: "realm list"
+      register: realm_status
+      changed_when: false
+
+    - name: Join AD domain
+      ansible.builtin.expect:
+        command: "realm join {{ lab_domain_name }} --user={{ ad_admin_user }} -v"
+        responses:
+          "Password for*": "{{ ad_admin_password }}"
+      register: realm_join_result
+      when: lab_domain_name not in realm_status.stdout
+      #no_log: true
+
+    - name: Confirm domain join succeeded
+      ansible.builtin.command: "realm list"
+      register: realm_confirm
+      changed_when: false
+
+    - name: Fail explicitly if the domain is absent after the join attempt
+      ansible.builtin.fail:
+        msg: "realm join did not complete successfully - {{ lab_domain_name }} not found in realm list output"
+      when: lab_domain_name not in realm_confirm.stdout
+
+  handlers:
+    - name: restart NetworkManager
+      ansible.builtin.service:
+        name: NetworkManager
+        state: restarted

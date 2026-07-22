@@ -1,0 +1,20 @@
+---
+lab_domain_name: "lab.local"
+lab_domain_netbios_name: "LAB"
+
+# Mirrors ad_vm.private_ip in vagrant/config.yml — update both if the lab network changes
+ad_dc_ip: "192.168.56.10"
+
+baseline_manage_time_sync: true
+baseline_ntp_enabled: true
+
+ad_base_dn: "DC=lab,DC=local"
+app_servers_ou_name: "AppServers"
+svc_domjoin_user: "svc-domjoin"
+
+ad_bootstrap_admin_user: "Administrator"
+ad_bootstrap_admin_password: "{{ vault_ad_bootstrap_admin_password }}"
+
+ad_admin_user: "{{ ad_bootstrap_admin_user }}"
+ad_admin_password: "{{ vault_ad_bootstrap_admin_password }}"
+
