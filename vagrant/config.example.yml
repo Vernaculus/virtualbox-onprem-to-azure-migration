@@ -30,6 +30,7 @@ ad_vm:
   cpus: 2                                               # vCPU count - 2 balances responsiveness against host resource use
   ad_domain_name: "lab.local"                           # Active Directory domain name
   ad_netbios_name: "LAB"                                 # Active Directory NetBIOS name
+  admin_password: "ChangeMe123!"
 
 # ---------------------------------------------------------------------------
 # RHEL Application Server
