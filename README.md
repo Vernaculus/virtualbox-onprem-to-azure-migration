@@ -17,6 +17,8 @@ This project demonstrates an end-to-end on-premises to Azure migration on a smal
 ## Architecture
 
 Before (On-Prem, VirtualBox):
+
+
 ![On-prem infrastructure pre-migration](docs/onprem-architecture.svg)
 
 After (Azure):
