@@ -20,7 +20,7 @@ Before (On-Prem, VirtualBox):
 [Insert before-diagram]
 
 After (Azure):
-[Insert after-diagram]
+![On-prem infrastructure pre-migration](docs/onprem-architecture.svg)
 
 On-prem lab topology:
 
